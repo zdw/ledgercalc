@@ -1,0 +1,19 @@
+2013-01-01 Items for One 
+  Customer:One:Items   -$100
+  Accounts:Checking
+
+2013-01-02 Items for Two
+  Customer:Two:Items   -$20
+  Accounts:Checking
+
+2013-02-01 More Stuff for Two
+  Customer:Two:Stuff  -$20
+  Customer:Two:Things  -$20
+  Accounts:Checking
+
+2014-01-01 Next year's stuff for One
+  Customer:One:Items  -$100 
+  Accounts:Checking
+
+
+

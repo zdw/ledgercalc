@@ -1,0 +1,5 @@
+$items "Customer:.*:Items" =  
+$all "Customer" = 
+$double_things "Customer:.*:Things" 2 * = 
+$tax 0.05 = 
+$tax_paid $all $tax * $all + = 
