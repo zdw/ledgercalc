@@ -3,3 +3,7 @@ $all "Customer" =
 $double_things "Customer:.*:Things" 2 * = 
 $tax 0.05 = 
 $tax_paid $all $tax * $all + = 
+$maxtest $all $tax max = 
+$mintest $all $tax min = 
+$negtest $all neg =
+$abstest $negtest abs = 

@@ -38,6 +38,8 @@ def balance_acct(acct_name, start_d=None, end_d=None):
 # recursively accumulate the balance for all posts/subaccounts of given account
 def bal_posts_subacct(account, start_d=None, end_d=None):
     total = ledger.Balance()
+    if account == None: # if nothing was matched, return empty balance object
+        return total
     for post in account.posts():
         if start_d and post.date < start_d:
             continue
@@ -111,6 +113,9 @@ def assign(scanner, token):
 def operator(scanner, token):
     return "OPERATOR", token
 
+def singleop(scanner, token):
+    return "SINGLEOP", token
+
 def comment(scanner, token):
     return "COMMENT", token
 
@@ -119,10 +124,12 @@ def endofline(scanner, token):
 
 # The scanner re list
 scanner = re.Scanner([
+    (r"max|min", operator), # max and min are operators
+    (r"abs|neg", singleop), # abs and neg take only operate on a single value
     (r"[A-Za-z][\w:]*", account),  # bare, simple, no wildcard accounts
     (r"\"[A-Za-z\.][\w\s_:\-\.\*]*\"", account), # accounts can have spaces/re when in quotes
-    (r"\$\w+", variable),
-    (r"\+|\-|\*|\\", operator),
+    (r"\$\w+", variable), # variables start with $
+    (r"\+|\-|\*|\\", operator), 
     (r"\=", assign),
     (r"[0-9]+(\.[0-9]+)?", number),
     (r"\n+", endofline),   # newlines = end of statement
@@ -149,6 +156,8 @@ with open(sys.argv[1],'r') as f:
         if remainder:
             print "line #%s, invalid commands, scanner remainder: %s" % (linenum, remainder)
             sys.exit(1)
+
+        # print tokens # dumps the entire parsed scanner output, great for debugging
 
         cursor = 0
         while cursor < len(tokens):
@@ -187,12 +196,45 @@ with open(sys.argv[1],'r') as f:
                     calc = op2[1] * op1[1].to_amount()
                 elif func[1] == "/":
                     calc = op2[1] / op1[1].to_amount()
+                elif func[1] == "max":
+                    if op1[1] > op2[1]:
+                        calc = op1[1]
+                    else:
+                        calc = op2[1]
+                elif func[1] == "min":
+                    if op1[1] < op2[1]:
+                        calc = op1[1]
+                    else:
+                        calc = op2[1]
                 else:
                     print "Undefined, but matched, operator: %s" % func[1]
                     print "line: %s, cursor: %s, length: %s" % (linenum, cursor, len(tokens))
                     sys.exit(1)
                 tokens.insert(cursor-2,["NUM", calc, calc.to_string()])
                 cursor -= 2 # compensate for 2 popped items
+
+            elif tokentype == "SINGLEOP":
+                func = tokens.pop(cursor)
+                if cursor < 1:
+                    print "tried to perform a: %s without enough operands" % (func[1])
+                    print "line: %s, cursor: %s, length: %s" % (linenum, cursor, len(tokens))
+                    sys.exit(1)
+                op1 = tokens.pop(cursor-1)
+                if (op1[0] != "ACCT" and op1[0] != "VAR" and op1[0] != "NUM"):
+                    print "invalid operation: %s on a %s" % (func[1], op1[0])
+                    print "line: %s, cursor: %s, length: %s" % (linenum, cursor, len(tokens))
+                    sys.exit(1)
+                if (op1[0] == "VAR" and op1[1] == None):
+                    print "variable: %s referenced, but has not been set" % (op1[2])
+                    print "line: %s, cursor: %s, length: %s" % (linenum, cursor, len(tokens))
+                    sys.exit(1)
+                if func[1] == "abs":
+                    calc = abs(op1[1])
+                elif func[1] == "neg":
+                    calc = - op1[1]
+                tokens.insert(cursor-1,["NUM", calc, calc.to_string()])
+                cursor -= 1 #compensate for a single popped item
+
 
             elif tokentype == "ASSIGN":
                 func = tokens.pop(cursor)
@@ -234,7 +276,7 @@ with open(sys.argv[1],'r') as f:
 
 # print out sorted list of variables
 for key in sorted(var_dict.keys()):
-    print "%s = %s" % (key, var_dict[key])
+    print "%s = %s" % (key, var_dict[key].value(usd))
 
 
 
