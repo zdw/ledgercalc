@@ -20,6 +20,10 @@ adds two accounts, pushes result onto stack.
 
 Accounts containing spaces/regex must be put in double quotes.
 
+To filter transactions by payee, append two spaces and then payee to account name, like this:
+
+    "Income:Wages  Acme, Inc." account2 +
+
 Variables are prefixed with `$`, and are assigned like this:
 
     $taxrate 0.091 = 
