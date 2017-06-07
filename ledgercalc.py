@@ -32,14 +32,20 @@ end = datetime.date(int(sys.argv[3]),1,1)
 # find the balance for an account
 def balance_acct(acct_name, start_d=None, end_d=None):
     total = ledger.Balance()
+    splitter = "  "
+    payee = None
+    if splitter in acct_name:
+        index = acct_name.index(splitter)
+        payee = acct_name[(index + 4):]
+        acct_name = acct_name[:index]
     if re.match(r"^[A-Za-z:_\-\ ]*$",acct_name):  # if the account name lacks re's
         account = journal.find_account_re(acct_name)
-        return bal_posts_subacct(account, start_d, end_d)
+        return bal_posts_subacct(account, start_d, end_d, payee)
     else:
         return bal_re_acct(acct_name,start_d,end_d)
 
 # recursively accumulate the balance for all posts/subaccounts of given account
-def bal_posts_subacct(account, start_d=None, end_d=None):
+def bal_posts_subacct(account, start_d=None, end_d=None, payee=None):
     total = ledger.Balance()
     if account == None: # if nothing was matched, return empty balance object
         return total
@@ -47,6 +53,8 @@ def bal_posts_subacct(account, start_d=None, end_d=None):
         if start_d and post.date < start_d:
             continue
         if end_d and post.date > end_d:
+            continue
+        if payee and payee != post.xact.payee:
             continue
         total += post.amount
     for subacct in account.accounts():
